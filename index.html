@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+	<head>
+	</head>
+	<body>
+
+		<main>
+			<a onclick="openFile()">choose image</a>
+			<input
+						type="file"
+						onchange="inputChange(this)"
+						accept=".jpg, .png" />
+			<img />
+			<canvas width="0" height="0"></canvas>
+			<canvas width="0" height="0"></canvas>
+			<input type="range" min="0" max="255" />
+		</main>			
+		<style media="screen">
+
+			*:focus {
+				background: none;
+				border: none;
+			}
+			
+			body {
+				/* overflow: hidden; */
+			}
+
+			main {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				flex-direction: column;
+				padding: 10px;
+				border: 3px solid black;
+				width: max-content;
+				height: max-content;
+				min-height: 600px;
+				gap: 10px;
+				margin: 0 auto;
+			}
+
+			[type="file"] {
+					visibility: hidden;
+					position: absolute;
+			}
+
+			[type="range"] {
+				transform: scale(1.8);
+			}
+
+			a {
+				cursor: pointer;
+				font-size: 3rem;
+				font-family: Arial, Helvetica, sans-serif;
+			}
+
+			a:hover {
+				text-decoration: underline;
+			}
+
+			@media (orientation: portrait) {
+				* {
+					transform: scale(1.1);
+				}
+
+				body, html {
+					width: 100%;
+					height: 100%;
+					position: relative;
+				}
+
+				body {
+					/* display: grid;
+					place-items: center; */
+					display: flex;
+					justify-content: center;
+					align-items: center;
+				}
+
+				main {
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					flex-direction: column;
+					height: 100%;
+					width: 100%;
+					padding: 70px;
+					border: 3px solid black;
+					width: max-content;
+					height: max-content;
+					min-height: 600px;
+					gap: 10px;
+				}
+			}
+
+		</style>
+
+		<script defer>
+			const [canv_1, canv_2] = document.querySelectorAll("canvas")
+			const [input, slider] = document.querySelectorAll("input")
+			const canv_ctx_2 = canv_2.getContext("2d")
+			const canv_ctx_1 = canv_1.getContext("2d")
+			const copy_pixels_array = []
+			const fileReader = new FileReader()
+			const sleep = ms => new Promise(res => setTimeout(res, ms))
+			function openFile(){
+				input.click()
+			}
+			function inputChange(inpt){
+				const [image] = inpt.files
+				fileReader.onload = async evt => {
+					const img = document.querySelector("img")
+					img.src = evt.target.result
+					img.crossOrigin = "Anonymous"
+					// console.log(img.width);
+					await sleep(50)
+					canv_1.width = canv_2.width = img.width
+					canv_1.height = canv_2.height = img.height
+					canv_ctx_1.drawImage(img, 0, 0, canv_1.width, canv_1.height)
+					const { data: pixels } = canv_ctx_1.getImageData(0, 0, canv_1.width, canv_1.height)
+					// console.log(pixels);
+					img.remove()
+					let y = 0
+					for(let y = 0;y < canv_2.height;y++) {
+						for(let x = 0;x < canv_2.width;x++) {
+							const index = (x + y * canv_2.width) * 4
+							let red = pixels[index]
+							let green = pixels[index+1]
+							let blue = pixels[index+2]
+							let alpha = pixels[index+3]
+							const average = (red + green + blue) / 3
+							if(average > slider.value) red = green = blue = 255
+							else red = green = blue = 0
+							canv_ctx_2.fillStyle = `rgba(${red},${green},${blue}, ${alpha})`
+							canv_ctx_2.fillRect(x, y, 1, 1)
+						}
+					}
+				}
+				fileReader.readAsDataURL(image)
+			}
+		</script>
+
+	</body>
+</html>
